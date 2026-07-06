@@ -1,6 +1,8 @@
+import LandingPage from './pages/customer/LandingPage';
+
 function App() {
   return (
-    <h1>ShopStack Frontend</h1>
+    <LandingPage />
   );
 }
 
