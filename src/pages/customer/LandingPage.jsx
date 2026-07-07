@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Search, 
   ShoppingBag, 
@@ -6,7 +6,6 @@ import {
   User, 
   Star, 
   ArrowRight, 
-  ChevronRight, 
   Plus, 
   Minus, 
   Trash2, 
@@ -19,273 +18,62 @@ import {
   Truck, 
   Sun, 
   Moon, 
-  Menu, 
-  Clock, 
   Compass, 
   Gift, 
   BarChart2, 
   Tag, 
-  Warehouse, 
-  Bell, 
-  Briefcase 
+  Warehouse
 } from 'lucide-react';
 import './LandingPage.css';
 
-// Product Catalog Database
-const PRODUCTS_DATA = [
-  // Electronics
-  {
-    id: 'e1',
-    name: 'ShopStack Pro VR Headset',
-    category: 'electronics',
-    price: 599.99,
-    rating: 4.8,
-    reviews: 120,
-    image: 'https://images.unsplash.com/photo-1593508512255-86ab42a8e620?w=500&auto=format&fit=crop&q=60',
-    description: 'Immersive next-generation spatial computing headset with high-fidelity tracking, ergonomic weight distribution, and high-refresh dual displays. Ideal for developers and gamers.',
-    vendor: 'ElectroLux Systems'
-  },
-  {
-    id: 'e2',
-    name: 'AuraSound Noise Cancelling Earbuds',
-    category: 'electronics',
-    price: 149.99,
-    rating: 4.6,
-    reviews: 320,
-    image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&auto=format&fit=crop&q=60',
-    description: 'Active hybrid noise-cancelling wireless earbuds with custom-tuned acoustic drivers, 36-hour battery life, and crystal-clear voice microphone pickup.',
-    vendor: 'WaveAudio Lab'
-  },
-  {
-    id: 'e3',
-    name: 'Quantum Chrono Watch Series X',
-    category: 'electronics',
-    price: 299.99,
-    rating: 4.7,
-    reviews: 85,
-    image: 'https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?w=500&auto=format&fit=crop&q=60',
-    description: 'State-of-the-art smartwatch containing health telemetry, built-in dual GPS, sapphire screen protection, and seamless multi-device notification pairing.',
-    vendor: 'ChronosTech'
-  },
-  {
-    id: 'e4',
-    name: 'NeoCore Stylus Tablet Pro',
-    category: 'electronics',
-    price: 449.99,
-    rating: 4.5,
-    reviews: 95,
-    image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=500&auto=format&fit=crop&q=60',
-    description: 'Ultrathin drawing and productivity tablet with high pressure-sensitive digital stylus, vibrant 120Hz display, and robust octacore processor.',
-    vendor: 'NeoCore Devices'
-  },
-  // Fashion
-  {
-    id: 'f1',
-    name: 'ThermoSkin Smart Parka Jacket',
-    category: 'fashion',
-    price: 199.99,
-    rating: 4.7,
-    reviews: 140,
-    image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&auto=format&fit=crop&q=60',
-    description: 'Windproof and waterproof winter parka integrated with premium thermal insulation, smart heat distribution lining, and hidden magnetic quick-release pockets.',
-    vendor: 'UrbanVibe Apparel'
-  },
-  {
-    id: 'f2',
-    name: 'AeroPace Cushioned Runners',
-    category: 'fashion',
-    price: 129.99,
-    rating: 4.9,
-    reviews: 410,
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=60',
-    description: 'Ultra-lightweight athletic running shoes featuring dual-density cushion midsole foam, breathable knit exterior, and durable high-grip carbon rubber sole.',
-    vendor: 'PaceAthletics'
-  },
-  {
-    id: 'f3',
-    name: 'Horizon Polarized Sunglasses',
-    category: 'fashion',
-    price: 89.99,
-    rating: 4.4,
-    reviews: 75,
-    image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=500&auto=format&fit=crop&q=60',
-    description: 'Classic tortoiseshell sunglasses with 100% UVA/UVB polarized protective lenses and robust hand-polished acetate frames.',
-    vendor: 'HorizonOptics'
-  },
-  {
-    id: 'f4',
-    name: 'FlexFit Breathable Knit Tee',
-    category: 'fashion',
-    price: 39.99,
-    rating: 4.5,
-    reviews: 180,
-    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&auto=format&fit=crop&q=60',
-    description: 'Pre-shrunk premium cotton athletic tee designed with ventilation channels for high moisture wicking during heavy daily workout routines.',
-    vendor: 'UrbanVibe Apparel'
-  },
-  // Home & Living
-  {
-    id: 'h1',
-    name: 'Lumina Smart Ambient Lamp',
-    category: 'home',
-    price: 79.99,
-    rating: 4.6,
-    reviews: 210,
-    image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500&auto=format&fit=crop&q=60',
-    description: 'App-controlled customizable smart lamp producing 16 million colors, automated circadian sleep scheduling, and built-in white noise soundscape speaker.',
-    vendor: 'LuminaDecors'
-  },
-  {
-    id: 'h2',
-    name: 'ErgoPosture Adjustable Office Chair',
-    category: 'home',
-    price: 249.99,
-    rating: 4.8,
-    reviews: 150,
-    image: 'https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=500&auto=format&fit=crop&q=60',
-    description: 'High-back ergonomic office chair built with fully adjustable lumbar support padding, 3D rotating armrests, and high-tension breathable cooling mesh back.',
-    vendor: 'ComfortCo Furniture'
-  },
-  {
-    id: 'h3',
-    name: 'HydroPure Cold Press Juicer',
-    category: 'home',
-    price: 119.99,
-    rating: 4.5,
-    reviews: 90,
-    image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop&q=60',
-    description: 'Low-speed masticating cold press juicer engineered to maximize juice yield and retain high nutritional value without causing high friction heat.',
-    vendor: 'PureLiving Appliances'
-  },
-  {
-    id: 'h4',
-    name: 'SleepSoft Bamboo Bed Sheet Set',
-    category: 'home',
-    price: 69.99,
-    rating: 4.7,
-    reviews: 340,
-    image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&auto=format&fit=crop&q=60',
-    description: 'Hypoallergenic and highly cooling 4-piece bed sheets manufactured using 100% organic, silky-soft bamboo fibers with deep double-stitched corner pockets.',
-    vendor: 'ComfortCo Furniture'
-  },
-  // Beauty & Health
-  {
-    id: 'b1',
-    name: 'Rejuvenate Vitamin C Glow Serum',
-    category: 'beauty',
-    price: 45.99,
-    rating: 4.8,
-    reviews: 620,
-    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500&auto=format&fit=crop&q=60',
-    description: 'Brightening vitamin C face serum enriched with organic hyaluronic acid, ferulic acid, and orange fruit extracts. Formulated to correct hyperpigmentation.',
-    vendor: 'GlowBotanics Co.'
-  },
-  {
-    id: 'b2',
-    name: 'HydroGlow Hyaluronic Hydration Cream',
-    category: 'beauty',
-    price: 38.99,
-    rating: 4.7,
-    reviews: 430,
-    image: 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=500&auto=format&fit=crop&q=60',
-    description: 'Deep moisture-lock face cream infused with multi-molecular weight hyaluronic acid and botanical squalane to replenish skin texture overnight.',
-    vendor: 'SkinScience Labs'
-  },
-  {
-    id: 'b3',
-    name: 'Lavender Essence Organic Calming Oil',
-    category: 'beauty',
-    price: 22.99,
-    rating: 4.6,
-    reviews: 190,
-    image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=500&auto=format&fit=crop&q=60',
-    description: '100% therapeutic grade pure cold-distilled organic lavender essential oil. Perfect for ambient diffusers, calming baths, and soothing body massages.',
-    vendor: 'GlowBotanics Co.'
-  },
-  {
-    id: 'b4',
-    name: 'SonicGlow Facial Cleansing Brush',
-    category: 'beauty',
-    price: 85.99,
-    rating: 4.5,
-    reviews: 80,
-    image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=500&auto=format&fit=crop&q=60',
-    description: 'Ultra-hygienic sonic silicone facial brush delivering 8,000 pulsations per minute. Designed to gently unclog pores and remove makeup residue.',
-    vendor: 'SkinScience Labs'
-  }
-];
+import { PRODUCTS_DATA } from '../../data/products';
 
-// Developer Roadmap Timeline (based on the PDF Milestones)
-const MILESTONES = [
-  {
-    title: 'Project Initialization & Core Setup',
-    week: 'Weeks 1 & 2',
-    color: '#aa3bff',
-    tasks: [
-      'Define marketplace architecture & database entity schemas (PostgreSQL)',
-      'Setup React (Vite) frontend + Spring Boot Maven backend',
-      'Implement JWT & OAuth2 login routes with Role-Based Access Control',
-      'Initialize Customer, Vendor, and Admin management structures'
-    ],
-    outcome: 'Basic working environment with authentication and database connections established.'
-  },
-  {
-    title: 'Inventory, Pricing & Order Processing',
-    week: 'Weeks 3 & 4',
-    color: '#3b82f6',
-    tasks: [
-      'Build product catalog module (category listings & multi-vendor metadata)',
-      'Develop real-time inventory tracking and low-stock notification alerts',
-      'Create interactive shopping cart management & secure checkout integration',
-      'Configure payment gateways (Stripe, Razorpay, and PayPal)'
-    ],
-    outcome: 'Fully operational checkout sequence, with inventory updates and payment verifications.'
-  },
-  {
-    title: 'Admin Dashboards, Coupons & Logistics',
-    week: 'Weeks 5 & 6',
-    color: '#ec4899',
-    tasks: [
-      'Develop comprehensive coupon engine & automated discount promotional workflows',
-      'Implement warehouse allocation system & package pick-and-pack routing',
-      'Build Admin Dashboard for vendor approval reviews & platform commission management',
-      'Configure real-time delivery status notifications and shipment tracking'
-    ],
-    outcome: 'Enterprise logistics workflows, platform fee collection, and promotional campaigns.'
-  },
-  {
-    title: 'Testing, Deployment & Documentation',
-    week: 'Weeks 7 & 8',
-    color: '#10b981',
-    tasks: [
-      'Perform system integration tests using JUnit, Mockito, and React Testing Library',
-      'Optimize API response times, query performance, and Redis cache hit ratios',
-      'Deploy application containers using Docker Compose, Nginx, and cloud instances',
-      'Compile final API documentation (Postman collection) and user manuals'
-    ],
-    outcome: 'Polished, containerized, and production-ready enterprise multi-vendor e-commerce site.'
-  }
-];
 
-export default function LandingPage() {
-  const [theme, setTheme] = useState('dark');
+
+export default function LandingPage({ 
+  onNavigate, 
+  user, 
+  onLogout, 
+  appTheme = 'dark', 
+  onToggleAppTheme,
+  cart,
+  onSaveCart,
+  wishlist,
+  onSaveWishlist
+}) {
+  const theme = appTheme;
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Cart & Wishlist States
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
-  
   // Open/Close Drawers & Modals
   const [cartOpen, setCartOpen] = useState(false);
-  const [wishlistOpen, setWishlistOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [devModalOpen, setDevModalOpen] = useState(false);
-  const [activeMilestone, setActiveMilestone] = useState(0);
   
   // Toast Alerts State
   const [toasts, setToasts] = useState([]);
   
+  // Toast Helper (declared at the top to prevent access-before-declaration warnings)
+  const addToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  };
+
+  // Track previous user via ref to avoid state changes causing renders in effect
+  const prevUserRef = useRef(user);
+
+  // Monitor user state for welcome toasts
+  useEffect(() => {
+    if (user && !prevUserRef.current) {
+      addToast(`Welcome back, ${user.name}! Logged in as ${user.role === 'customer' ? 'Customer' : 'Vendor'}.`, 'success');
+    }
+    prevUserRef.current = user;
+  }, [user]);
+
   // Vendor Registration State
   const [vendorForm, setVendorForm] = useState({
     name: '',
@@ -294,46 +82,18 @@ export default function LandingPage() {
     category: 'electronics'
   });
 
-  // Load cart and wishlist from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('shopstack_cart');
-    const savedWishlist = localStorage.getItem('shopstack_wishlist');
-    const savedTheme = localStorage.getItem('shopstack_theme');
-    
-    if (savedCart) setCart(JSON.parse(savedCart));
-    if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.body.className = savedTheme === 'light' ? 'light-theme' : '';
-    }
-  }, []);
-
   // Save changes to local storage
   const saveCart = (newCart) => {
-    setCart(newCart);
-    localStorage.setItem('shopstack_cart', JSON.stringify(newCart));
+    onSaveCart(newCart);
   };
 
   const saveWishlist = (newWishlist) => {
-    setWishlist(newWishlist);
-    localStorage.setItem('shopstack_wishlist', JSON.stringify(newWishlist));
+    onSaveWishlist(newWishlist);
   };
 
   const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    localStorage.setItem('shopstack_theme', nextTheme);
-    document.body.className = nextTheme === 'light' ? 'light-theme' : '';
-    addToast(`Switched to ${nextTheme === 'dark' ? 'Dark' : 'Light'} Mode`, 'info');
-  };
-
-  // Toast Helper
-  const addToast = (message, type = 'success') => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
+    onToggleAppTheme();
+    addToast(`Switched to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`, 'info');
   };
 
   // Cart operations
@@ -371,6 +131,10 @@ export default function LandingPage() {
 
   // Wishlist operations
   const handleToggleWishlist = (product) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     const isWishlisted = wishlist.includes(product.id);
     let updated;
     if (isWishlisted) {
@@ -381,6 +145,22 @@ export default function LandingPage() {
       addToast(`Added "${product.name}" to wishlist!`);
     }
     saveWishlist(updated);
+  };
+
+  // Bulk: Add all currently filtered products to wishlist
+  const handleAddAllToWishlist = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    const productsToAdd = filteredProducts.filter((p) => !wishlist.includes(p.id));
+    if (productsToAdd.length === 0) {
+      addToast('All shown products are already in your wishlist.', 'info');
+      return;
+    }
+    const newWishlist = [...wishlist, ...productsToAdd.map((p) => p.id)];
+    saveWishlist(newWishlist);
+    addToast(`Added ${productsToAdd.length} products to wishlist!`, 'success');
   };
 
   // Vendor Form Onboarding On-Submit
@@ -395,16 +175,14 @@ export default function LandingPage() {
   };
 
   // Filtering Logic
-  const filteredProducts = useMemo(() => {
-    return PRODUCTS_DATA.filter((product) => {
-      const matchesCategory = activeCategory === 'all' || product.category === activeCategory;
-      const matchesSearch = 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.vendor.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
-  }, [activeCategory, searchQuery]);
+  const filteredProducts = PRODUCTS_DATA.filter((product) => {
+    const matchesCategory = activeCategory === 'all' || product.category === activeCategory;
+    const matchesSearch = 
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.vendor.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   // Cart totals
   const totalCartCount = useMemo(() => {
@@ -440,18 +218,7 @@ export default function LandingPage() {
               <li><a href="#" className="active">Home</a></li>
               <li><a href="#browse-section">Browse Shop</a></li>
               <li><a href="#become-vendor-section">Sellers Portal</a></li>
-              <li>
-                <a 
-                  href="#" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setDevModalOpen(true);
-                  }}
-                  style={{ color: 'var(--primary-glow)', fontWeight: '600' }}
-                >
-                  Developer Map
-                </a>
-              </li>
+
             </ul>
           </nav>
 
@@ -461,8 +228,8 @@ export default function LandingPage() {
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
-            {/* Wishlist toggle */}
-            <button className="icon-btn" onClick={() => setWishlistOpen(true)} title="View wishlist">
+            {/* Wishlist button */}
+            <button className="icon-btn" onClick={() => onNavigate('wishlist')} title="View wishlist">
               <Heart size={18} />
               {wishlist.length > 0 && <span className="badge">{wishlist.length}</span>}
             </button>
@@ -473,13 +240,59 @@ export default function LandingPage() {
               {totalCartCount > 0 && <span className="badge">{totalCartCount}</span>}
             </button>
 
-            <button 
-              className="primary-btn" 
-              onClick={() => addToast('Authentication flows (OAuth2/JWT) are simulated under the "Developer Map".', 'info')}
-            >
-              <User size={16} />
-              <span>Sign In</span>
-            </button>
+            {!user ? (
+              <button 
+                className="primary-btn" 
+                onClick={() => onNavigate('login')}
+              >
+                <User size={16} />
+                <span>Sign In</span>
+              </button>
+            ) : (
+              <div className="profile-menu-container">
+                <button 
+                  className="profile-trigger"
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                >
+                  <div className="avatar-circle">{user.avatar}</div>
+                  <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user.name.split(' ')[0]}
+                  </span>
+                </button>
+                {profileMenuOpen && (
+                  <div className="profile-dropdown glass-card">
+                    <div className="dropdown-user-info">
+                      <span className="dropdown-user-name">{user.name}</span>
+                      <span className="dropdown-user-email">{user.email}</span>
+                      <span className={`role-tag ${user.role}`}>
+                        {user.role}
+                      </span>
+                    </div>
+                    <button 
+                      className="dropdown-item"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        addToast(`Navigating to ${user.role === 'customer' ? 'Orders History' : 'Merchant Dashboard'}...`, 'info');
+                      }}
+                    >
+                      <Layers size={14} />
+                      <span>{user.role === 'customer' ? 'My Orders' : 'Vendor Dashboard'}</span>
+                    </button>
+                    <button 
+                      className="dropdown-item logout"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        onLogout();
+                        addToast('Successfully signed out.', 'info');
+                      }}
+                    >
+                      <X size={14} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -550,42 +363,30 @@ export default function LandingPage() {
             </div>
             <h3 className="feature-title">Role Access (JWT)</h3>
             <p className="feature-desc">Secure microservice auth defining Customers, Vendors, Admins, and Warehouse staff access rules.</p>
-            <div className="feature-link" onClick={() => { setActiveMilestone(0); setDevModalOpen(true); }}>
-              <span>View specs</span> <ArrowRight size={14} />
             </div>
-          </div>
-
-          <div className="feature-card glass-card">
-            <div className="feature-icon-wrapper" style={{ background: '#3b82f6' }}>
-              <DollarSign size={20} />
+  
+            <div className="feature-card glass-card">
+              <div className="feature-icon-wrapper" style={{ background: '#3b82f6' }}>
+                <DollarSign size={20} />
+              </div>
+              <h3 className="feature-title">Smart Checkouts</h3>
+              <p className="feature-desc">Transactional integrity integrations linking Stripe, Razorpay, and PayPal multi-currency gateway settlements.</p>
             </div>
-            <h3 className="feature-title">Smart Checkouts</h3>
-            <p className="feature-desc">Transactional integrity integrations linking Stripe, Razorpay, and PayPal multi-currency gateway settlements.</p>
-            <div className="feature-link" onClick={() => { setActiveMilestone(1); setDevModalOpen(true); }}>
-              <span>View specs</span> <ArrowRight size={14} />
+  
+            <div className="feature-card glass-card">
+              <div className="feature-icon-wrapper" style={{ background: '#ec4899' }}>
+                <Warehouse size={20} />
+              </div>
+              <h3 className="feature-title">Warehouse Allocation</h3>
+              <p className="feature-desc">Automated inventory synchronization, localized stock movement routing, and courier pick-and-pack logic.</p>
             </div>
-          </div>
-
-          <div className="feature-card glass-card">
-            <div className="feature-icon-wrapper" style={{ background: '#ec4899' }}>
-              <Warehouse size={20} />
-            </div>
-            <h3 className="feature-title">Warehouse Allocation</h3>
-            <p className="feature-desc">Automated inventory synchronization, localized stock movement routing, and courier pick-and-pack logic.</p>
-            <div className="feature-link" onClick={() => { setActiveMilestone(2); setDevModalOpen(true); }}>
-              <span>View specs</span> <ArrowRight size={14} />
-            </div>
-          </div>
-
-          <div className="feature-card glass-card">
-            <div className="feature-icon-wrapper" style={{ background: '#10b981' }}>
-              <BarChart2 size={20} />
-            </div>
-            <h3 className="feature-title">Seller Analytics</h3>
-            <p className="feature-desc">Real-time charts depicting revenue margins, system commission fees, customer conversion rates, and CSV exporting.</p>
-            <div className="feature-link" onClick={() => { setActiveMilestone(3); setDevModalOpen(true); }}>
-              <span>View specs</span> <ArrowRight size={14} />
-            </div>
+  
+            <div className="feature-card glass-card">
+              <div className="feature-icon-wrapper" style={{ background: '#10b981' }}>
+                <BarChart2 size={20} />
+              </div>
+              <h3 className="feature-title">Seller Analytics</h3>
+              <p className="feature-desc">Real-time charts depicting revenue margins, system commission fees, customer conversion rates, and CSV exporting.</p>
           </div>
         </div>
       </section>
@@ -633,6 +434,23 @@ export default function LandingPage() {
           >
             <Heart size={16} />
             <span>Beauty & Wellness</span>
+          </button>
+
+          <button 
+            className="category-tab add-all-wishlist-btn"
+            style={{ 
+              borderColor: 'var(--accent-border)', 
+              background: 'var(--accent-bg)',
+              color: 'var(--primary-glow)',
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onClick={handleAddAllToWishlist}
+          >
+            <Heart size={16} fill={filteredProducts.every((p) => wishlist.includes(p.id)) && filteredProducts.length > 0 ? 'currentColor' : 'none'} />
+            <span>Add All to Wishlist</span>
           </button>
         </div>
 
@@ -839,74 +657,79 @@ export default function LandingPage() {
                 <span>Subtotal</span>
                 <span>${totalCartPrice}</span>
               </div>
-              <button 
-                className="primary-btn checkout-btn" 
-                onClick={() => {
-                  saveCart([]);
-                  setCartOpen(false);
-                  addToast('Checkout simulated! Orders generated and sent to Warehouse modules.', 'success');
-                }}
-              >
-                <span>Proceed to Checkout</span>
-                <ArrowRight size={16} />
-              </button>
+              {!user ? (
+                <button 
+                  className="primary-btn checkout-btn" 
+                  onClick={() => {
+                    setCartOpen(false);
+                    onNavigate('login');
+                  }}
+                >
+                  <User size={16} />
+                  <span>Login to Checkout</span>
+                  <ArrowRight size={16} />
+                </button>
+              ) : (
+                <button 
+                  className="primary-btn checkout-btn" 
+                  onClick={() => {
+                    saveCart([]);
+                    setCartOpen(false);
+                    addToast('Checkout simulated! Orders generated and sent to Warehouse modules.', 'success');
+                  }}
+                >
+                  <span>Proceed to Checkout</span>
+                  <ArrowRight size={16} />
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Sliding Wishlist Drawer */}
-      <div className={`glass-drawer-overlay ${wishlistOpen ? 'open' : ''}`} onClick={() => setWishlistOpen(false)}>
-        <div className="glass-drawer" onClick={(e) => e.stopPropagation()}>
-          <div className="drawer-header">
-            <h3 className="drawer-title">
-              <Heart size={20} />
-              <span>Wishlist ({wishlist.length})</span>
-            </h3>
-            <button className="drawer-close" onClick={() => setWishlistOpen(false)}>
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="drawer-body">
-            {wishlist.length > 0 ? (
-              PRODUCTS_DATA.filter((p) => wishlist.includes(p.id)).map((product) => (
-                <div className="drawer-item" key={product.id}>
-                  <img src={product.image} alt={product.name} className="drawer-item-img" />
-                  <div className="drawer-item-details">
-                    <h4 className="drawer-item-name">{product.name}</h4>
-                    <span className="drawer-item-vendor">Sold by: {product.vendor}</span>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-                      <span className="drawer-item-price">${product.price}</span>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
-                          className="primary-btn" 
-                          style={{ padding: '6px 10px', borderRadius: '8px', fontSize: '12px' }}
-                          onClick={() => {
-                            handleAddToCart(product);
-                            handleToggleWishlist(product);
-                          }}
-                        >
-                          <Plus size={12} /> Add
-                        </button>
-                        <button className="item-delete-btn" onClick={() => handleToggleWishlist(product)} title="Remove item">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="empty-state">
-                <Heart size={48} style={{ color: 'var(--text-muted)', marginBottom: '12px' }} />
-                <h4>Your wishlist is empty</h4>
-                <p>Save items you like to buy them later.</p>
-                <button className="primary-btn" onClick={() => { setWishlistOpen(false); document.getElementById('browse-section')?.scrollIntoView({ behavior: 'smooth' }); }}>
-                  Explore Items
-                </button>
-              </div>
-            )}
+      {/* Guest Auth Warning Modal */}
+      <div className={`glass-modal-overlay ${authModalOpen ? 'open' : ''}`} onClick={() => setAuthModalOpen(false)}>
+        <div className="glass-modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+          <button className="modal-close" onClick={() => setAuthModalOpen(false)}>
+            <X size={18} />
+          </button>
+          <div style={{ textAlign: 'center', padding: '10px' }}>
+            <div style={{ 
+              width: '60px', 
+              height: '60px', 
+              borderRadius: '50%', 
+              background: 'var(--accent-bg)', 
+              color: 'var(--primary-glow)', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              marginBottom: '16px' 
+            }}>
+              <Heart size={28} fill="currentColor" />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '600', color: 'var(--text-h)', margin: '0 0 10px 0' }}>Sign In Required</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 20px 0' }}>
+              Please sign in to save items to your wishlist and manage your favorites.
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                className="secondary-btn" 
+                style={{ flex: 1, padding: '10px 14px' }} 
+                onClick={() => setAuthModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="primary-btn" 
+                style={{ flex: 1, padding: '10px 14px', justifyContent: 'center' }} 
+                onClick={() => {
+                  setAuthModalOpen(false);
+                  onNavigate('login');
+                }}
+              >
+                Sign In
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -967,135 +790,7 @@ export default function LandingPage() {
         )}
       </div>
 
-      {/* Developer Project Flow Simulator Map Modal */}
-      <div className={`glass-modal-overlay ${devModalOpen ? 'open' : ''}`} onClick={() => setDevModalOpen(false)}>
-        <div className="glass-modal" style={{ width: '900px' }} onClick={(e) => e.stopPropagation()}>
-          <button className="modal-close" onClick={() => setDevModalOpen(false)}>
-            <X size={18} />
-          </button>
-          
-          <div className="walkthrough-layout">
-            <div className="walkthrough-header">
-              <h2>ShopStack Integration Roadmap</h2>
-              <p>This panel shows how pages and backend services interlink based on the multi-developer milestones.</p>
-            </div>
 
-            {/* Interactive Timeline Tabs */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '24px' }}>
-              {MILESTONES.map((milestone, idx) => (
-                <button 
-                  key={idx}
-                  onClick={() => setActiveMilestone(idx)}
-                  className="secondary-btn"
-                  style={{
-                    borderColor: activeMilestone === idx ? milestone.color : 'var(--glass-border)',
-                    background: activeMilestone === idx ? `${milestone.color}15` : 'transparent',
-                    fontWeight: activeMilestone === idx ? '700' : '500',
-                    fontSize: '13px'
-                  }}
-                >
-                  Milestone {idx + 1}
-                </button>
-              ))}
-            </div>
-
-            {/* Highlighted Roadmap Milestone Details */}
-            <div className="roadmap-card active-milestone" style={{ borderColor: MILESTONES[activeMilestone].color }}>
-              <div 
-                className="milestone-badge" 
-                style={{ background: MILESTONES[activeMilestone].color }}
-              >
-                {MILESTONES[activeMilestone].week}
-              </div>
-              <h3 className="milestone-title">{MILESTONES[activeMilestone].title}</h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', fontWeight: '500' }}>
-                Outcome: {MILESTONES[activeMilestone].outcome}
-              </p>
-              
-              <h4 style={{ fontSize: '12px', margin: '0 0 8px 0', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Tasks Underway:</h4>
-              <ul className="milestone-tasks">
-                {MILESTONES[activeMilestone].tasks.map((task, idx) => (
-                  <li key={idx}>{task}</li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Simulated 15 Modules grid */}
-            <div className="modules-showcase">
-              <h3>Simulated Microservice Architecture & Sub-Modules</h3>
-              <div className="modules-list">
-                <div className="module-pill glass-element">
-                  <div className="module-icon-pill" style={{ background: 'rgba(170, 59, 255, 0.15)', color: '#aa3bff' }}>
-                    <Shield size={16} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px' }}>Auth service (JWT)</div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>OAuth2, Role claims</span>
-                  </div>
-                </div>
-
-                <div className="module-pill glass-element">
-                  <div className="module-icon-pill" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>
-                    <Layers size={16} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px' }}>Catalog module</div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Elasticsearch, Categories</span>
-                  </div>
-                </div>
-
-                <div className="module-pill glass-element">
-                  <div className="module-icon-pill" style={{ background: 'rgba(236, 72, 153, 0.15)', color: '#ec4899' }}>
-                    <Warehouse size={16} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px' }}>Warehouse dispatch</div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Pick-pack, sync stocks</span>
-                  </div>
-                </div>
-
-                <div className="module-pill glass-element">
-                  <div className="module-icon-pill" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
-                    <DollarSign size={16} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px' }}>Coupon & Promos</div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Discount calculations</span>
-                  </div>
-                </div>
-
-                <div className="module-pill glass-element">
-                  <div className="module-icon-pill" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
-                    <Truck size={16} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px' }}>Shipping tracking</div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Courier API updates</span>
-                  </div>
-                </div>
-
-                <div className="module-pill glass-element">
-                  <div className="module-icon-pill" style={{ background: 'rgba(107, 114, 128, 0.15)', color: 'var(--text-secondary)' }}>
-                    <Bell size={16} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13px' }}>Notification service</div>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>SMS, Email, Push</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <button 
-              className="primary-btn" 
-              style={{ margin: '30px auto 0 auto' }}
-              onClick={() => setDevModalOpen(false)}
-            >
-              Close Integration Panel
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Footer */}
       <footer className="glass-footer">
@@ -1118,8 +813,9 @@ export default function LandingPage() {
             <ul className="footer-links">
               <li><a href="#browse-section">Browse Stores</a></li>
               <li><a href="#" onClick={(e) => { e.preventDefault(); setCartOpen(true); }}>View Cart</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setWishlistOpen(true); }}>Your Wishlist</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); addToast('Security terms are simulated under the Developer Map.', 'info'); }}>Buyer Protections</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate('wishlist'); }}>Your Wishlist</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate('login'); }}>Customer Login</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate('register'); }}>Customer Signup</a></li>
             </ul>
           </div>
 
@@ -1127,9 +823,9 @@ export default function LandingPage() {
             <h4>For Vendors</h4>
             <ul className="footer-links">
               <li><a href="#become-vendor-section">Become a Seller</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setDevModalOpen(true); }}>Vendor Guidelines</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); setDevModalOpen(true); }}>Commission Fees</a></li>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); addToast('Vendor APIs are simulated in the background.', 'info'); }}>API Documentation</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate('login'); }}>Vendor Login</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigate('register'); }}>Vendor Registration</a></li>
+              <li><a href="#" onClick={(e) => { e.preventDefault(); addToast('Guidelines: Standard delivery within 2 days, flat 2% commission fee.', 'info'); }}>Vendor Guidelines</a></li>
             </ul>
           </div>
 
@@ -1154,7 +850,6 @@ export default function LandingPage() {
           <div className="footer-bottom-links">
             <a href="#" onClick={(e) => e.preventDefault()}>Privacy Policy</a>
             <a href="#" onClick={(e) => e.preventDefault()}>Terms of Service</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); setDevModalOpen(true); }}>Developer Roadmap</a>
           </div>
         </div>
       </footer>
