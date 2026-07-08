@@ -4,19 +4,41 @@ function InputField({
   placeholder,
   value,
   onChange,
+  name,
 }) {
   return (
-    <div className="mb-5">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+    <div className="mb-6">
+
+      <label className="mb-2 block text-sm font-medium tracking-wide text-slate-300">
         {label}
       </label>
 
       <input
+        name={name}
         type={type}
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="w-full border border-gray-300 rounded-lg pl-4 pr-16 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="
+          w-full
+          rounded-2xl
+          border
+          border-white/10
+          bg-white/5
+          px-5
+          py-4
+          text-white
+          placeholder:text-slate-500
+          backdrop-blur-md
+          transition-all
+          duration-300
+          outline-none
+          hover:border-violet-400/30
+          focus:border-violet-500
+          focus:bg-white/10
+          focus:ring-4
+          focus:ring-violet-500/20
+        "
       />
     </div>
   );

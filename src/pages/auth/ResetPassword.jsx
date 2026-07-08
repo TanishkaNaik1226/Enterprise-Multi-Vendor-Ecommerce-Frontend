@@ -1,8 +1,10 @@
 import { useState } from "react";
-import AuthHeader from "../../components/layout/AuthHeader";
-import PasswordField from "../../components/forms/PasswordFields";
-import PrimaryButton from "../../components/forms/PrimaryButton";
 import { Link } from "react-router-dom";
+
+import AuthContainer from "../../components/layout/AuthContainer";
+import AuthHeader from "../../components/layout/AuthHeader";
+import PasswordField from "../../components/forms/PasswordField";
+import PrimaryButton from "../../components/forms/PrimaryButton";
 
 function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -20,52 +22,56 @@ function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8">
+    <AuthContainer maxWidth="max-w-lg">
+      
+        {/* Left Section */}
+        <div className="flex items-center justify-center py-8">
+          <div className="w-full max-w-md">
 
-        <AuthHeader
-          title="Reset Password"
-          subtitle="Create a new password for your account"
-        />
-
-        <form className="mt-8" onSubmit={handleSubmit}>
-
-          <div className="mb-5">
-            <PasswordField
-              label="New Password"
-              placeholder="Enter new password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+            <AuthHeader
+              title="Reset Password"
+              subtitle="Create a new secure password for your ShopStack account."
             />
+
+            <form className="mt-8" onSubmit={handleSubmit}>
+
+              <PasswordField
+                label="New Password"
+                placeholder="Enter your new password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+
+              <PasswordField
+                label="Confirm Password"
+                placeholder="Re-enter your new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+
+              <div className="mt-8">
+                <PrimaryButton
+                  text="Reset Password"
+                  type="submit"
+                />
+              </div>
+
+              <div className="mt-8 border-t border-white/10 pt-6 text-center">
+                <Link
+                  to="/login"
+                  className="font-medium text-violet-300 transition hover:text-violet-200"
+                >
+                  ← Back to Login
+                </Link>
+              </div>
+
+            </form>
+
           </div>
-
-          <div className="mb-8">
-            <PasswordField
-              label="Confirm Password"
-              placeholder="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </div>
-
-          <PrimaryButton
-            text="Reset Password"
-            type="submit"
-          />
-
-        </form>
-
-        <div className="text-center mt-6">
-          <Link
-            to="/login"
-            className="text-blue-600 hover:underline"
-          >
-            Back to Login
-          </Link>
         </div>
 
-      </div>
-    </div>
+        
+    </AuthContainer>
   );
 }
 
