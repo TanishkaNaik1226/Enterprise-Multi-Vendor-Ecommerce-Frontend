@@ -25,7 +25,8 @@ import {
   TrendingUp,
   Package,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  User
 } from 'lucide-react';
 import './CustomerDashboard.css';
 
@@ -43,9 +44,11 @@ export default function CustomerDashboard({
   orders = [],
   notifications = [],
   onUpdateNotifications,
-  onUpdateOrders
+  onUpdateOrders,
+  onUpdateOrderStatus,
+  onUpdateUser
 }) {
-  const [activeTab, setActiveTab] = useState('overview'); // overview, orders, wishlist, notifications, security
+  const [activeTab, setActiveTab] = useState('overview'); // overview, orders, wishlist, notifications, security, profile
   const [toasts, setToasts] = useState([]);
   
   // Modal States
@@ -54,6 +57,65 @@ export default function CustomerDashboard({
   const [wishlistClearConfirm, setWishlistClearConfirm] = useState(false);
   const [removeItemConfirm, setRemoveItemConfirm] = useState(null);
   const [deleteOrderConfirm, setDeleteOrderConfirm] = useState(null);
+  const [cancellingOrder, setCancellingOrder] = useState(null);
+
+  // Profile Form State
+  const [profileForm, setProfileForm] = useState({
+    name: user ? user.name || 'Sarah Jenkins' : 'Sarah Jenkins',
+    email: user ? user.email || 'sarah@jenkins.com' : 'sarah@jenkins.com',
+    phone: user ? user.phone || '+1 555-019-2834' : '+1 555-019-2834',
+    address: user ? user.address || '128 Boutique Blvd, Floor 4' : '128 Boutique Blvd, Floor 4',
+    city: user ? user.city || 'Beverly Hills' : 'Beverly Hills',
+    state: user ? user.state || 'CA' : 'CA',
+    zipCode: user ? user.zipCode || '90210' : '90210',
+    memberSince: user ? user.memberSince || '2026-01-15' : '2026-01-15'
+  });
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '+1 555-019-2834',
+        address: user.address || '128 Boutique Blvd, Floor 4',
+        city: user.city || 'Beverly Hills',
+        state: user.state || 'CA',
+        zipCode: user.zipCode || '90210',
+        memberSince: user.memberSince || '2026-01-15'
+      });
+    }
+  }, [user]);
+
+  const handleProfileSave = (e) => {
+    e.preventDefault();
+    if (!profileForm.name.trim() || !profileForm.email.trim()) {
+      addToast('Name and Email are required.', 'error');
+      return;
+    }
+    if (onUpdateUser) {
+      onUpdateUser({
+        ...user,
+        name: profileForm.name,
+        email: profileForm.email,
+        phone: profileForm.phone,
+        address: profileForm.address,
+        city: profileForm.city,
+        state: profileForm.state,
+        zipCode: profileForm.zipCode,
+        memberSince: profileForm.memberSince
+      });
+      addToast('Profile updated successfully!', 'success');
+    }
+  };
+
+  const handleConfirmCancel = () => {
+    if (!cancellingOrder) return;
+    if (onUpdateOrderStatus) {
+      onUpdateOrderStatus(cancellingOrder.id, 'Cancelled');
+      addToast(`Order ${cancellingOrder.id} has been cancelled successfully.`, 'info');
+    }
+    setCancellingOrder(null);
+  };
 
   // Password Change Form State
   const [passwordForm, setPasswordForm] = useState({
@@ -204,7 +266,7 @@ export default function CustomerDashboard({
 
   // Get index for tracking stepper status bar
   const getStatusIndex = (status) => {
-    const statuses = ['Pending', 'Processing', 'Shipped', 'Delivered'];
+    const statuses = ['Pending', 'Processing', 'Packed', 'Shipped', 'Delivered'];
     return statuses.indexOf(status);
   };
 
@@ -335,6 +397,14 @@ export default function CustomerDashboard({
             >
               <Lock size={18} />
               <span>Boutique Security</span>
+            </button>
+
+            <button 
+              className={`sidebar-link ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveTab('profile')}
+            >
+              <User size={18} />
+              <span>My Profile Details</span>
             </button>
           </nav>
 
@@ -523,7 +593,25 @@ export default function CustomerDashboard({
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span className={`table-stock-badge ${order.status === 'Delivered' ? 'in' : order.status === 'Rejected' ? 'out' : 'low'}`} style={{ fontSize: '12px', padding: '6px 14px' }}>
+                          {(order.status === 'Pending' || order.status === 'Processing') && (
+                            <button 
+                              className="primary-btn"
+                              style={{ 
+                                padding: '6px 12px', 
+                                fontSize: '11.5px', 
+                                background: 'rgba(239, 68, 68, 0.15)', 
+                                border: '1px solid rgba(239, 68, 68, 0.3)', 
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                height: 'fit-content'
+                              }}
+                              onClick={() => setCancellingOrder(order)}
+                            >
+                              Cancel Order
+                            </button>
+                          )}
+
+                          <span className={`table-stock-badge ${order.status === 'Delivered' ? 'in' : (order.status === 'Rejected' || order.status === 'Cancelled') ? 'out' : 'low'}`} style={{ fontSize: '12px', padding: '6px 14px' }}>
                             {order.status}
                           </span>
                           
@@ -566,12 +654,12 @@ export default function CustomerDashboard({
                       </div>
 
                       {/* Visual Stepper / Timeline (Only show if not rejected) */}
-                      {order.status !== 'Rejected' ? (
+                      {order.status !== 'Rejected' && order.status !== 'Cancelled' ? (
                         <div className="order-tracking-stepper-container" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px' }}>
                           <h5 style={{ margin: '0 0 16px 0', fontSize: '13px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Package Journey</h5>
                           
                           <div className="order-stepper-timeline">
-                            {['Order Placed', 'Processing', 'In Transit (Shipped)', 'Delivered'].map((stepName, stepIdx) => {
+                            {['Order Placed', 'Processing', 'Packed', 'In Transit (Shipped)', 'Delivered'].map((stepName, stepIdx) => {
                               const activeIdx = getStatusIndex(order.status);
                               const isDone = stepIdx <= activeIdx;
                               const isCurrent = stepIdx === activeIdx;
@@ -585,6 +673,16 @@ export default function CustomerDashboard({
                                 </div>
                               );
                             })}
+                          </div>
+                        </div>
+                      ) : order.status === 'Cancelled' ? (
+                        <div className="rejected-order-banner glass-element" style={{ background: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.2)', padding: '16px', borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          <AlertTriangle size={20} color="#ef4444" style={{ flexShrink: 0 }} />
+                          <div style={{ textAlign: 'left' }}>
+                            <h5 style={{ margin: '0 0 4px 0', color: '#ef4444', fontSize: '13.5px', fontWeight: '750' }}>Order Cancelled</h5>
+                            <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                              You cancelled this order. The refund is being processed.
+                            </p>
                           </div>
                         </div>
                       ) : (
@@ -854,6 +952,144 @@ export default function CustomerDashboard({
             </div>
           )}
 
+          {activeTab === 'profile' && (
+            <div className="tab-pane">
+              <div className="pane-header">
+                <h2>My Personal Profile Details</h2>
+                <p>Manage your account profile details, shipping, and contact records</p>
+              </div>
+
+              <div className="profile-grid-layout">
+                {/* Left Panel: Avatar & Quick Info */}
+                <div className="profile-avatar-card glass-card">
+                  <div className="profile-avatar-circle">
+                    {profileForm.name ? profileForm.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'SJ'}
+                  </div>
+                  <h3 className="profile-avatar-title">{profileForm.name}</h3>
+                  <span className="profile-avatar-role">Boutique Buyer</span>
+                  
+                  <div style={{ marginTop: '24px', width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '8px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Status</span>
+                      <span style={{ color: '#10b981', fontWeight: '700' }}>Active Account</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '8px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Member Since</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>{profileForm.memberSince}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Panel: Form Fields */}
+                <form onSubmit={handleProfileSave} className="profile-form-card glass-card">
+                  
+                  {/* Account Information Section */}
+                  <div className="profile-form-section">
+                    <h4 className="profile-section-title">Personal Records</h4>
+                    <div className="profile-input-grid">
+                      <div className="payment-input-group">
+                        <label>Full Contact Name</label>
+                        <input 
+                          type="text" 
+                          value={profileForm.name} 
+                          onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} 
+                          placeholder="Sarah Jenkins"
+                          required
+                        />
+                      </div>
+                      <div className="payment-input-group">
+                        <label>Private Email Address</label>
+                        <input 
+                          type="email" 
+                          value={profileForm.email} 
+                          onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} 
+                          placeholder="sarah@jenkins.com"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="profile-input-grid" style={{ marginTop: '12px' }}>
+                      <div className="payment-input-group">
+                        <label>Contact Phone Number</label>
+                        <input 
+                          type="text" 
+                          value={profileForm.phone} 
+                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })} 
+                          placeholder="+1 555-019-2834"
+                        />
+                      </div>
+                      <div className="payment-input-group">
+                        <label>Join Timeline</label>
+                        <input 
+                          type="text" 
+                          value={profileForm.memberSince} 
+                          disabled
+                          style={{ opacity: 0.6, cursor: 'not-allowed' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Shipping Addresses Section */}
+                  <div className="profile-form-section" style={{ marginTop: '20px' }}>
+                    <h4 className="profile-section-title">Primary Shipping Destination</h4>
+                    <div className="payment-input-group">
+                      <label>Street Address</label>
+                      <input 
+                        type="text" 
+                        value={profileForm.address} 
+                        onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })} 
+                        placeholder="128 Boutique Blvd, Floor 4"
+                      />
+                    </div>
+                    
+                    <div className="profile-input-grid" style={{ marginTop: '12px' }}>
+                      <div className="payment-input-group">
+                        <label>City</label>
+                        <input 
+                          type="text" 
+                          value={profileForm.city} 
+                          onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })} 
+                          placeholder="Beverly Hills"
+                        />
+                      </div>
+                      <div className="payment-row-grid" style={{ gap: '16px' }}>
+                        <div className="payment-input-group">
+                          <label>State / Region</label>
+                          <input 
+                            type="text" 
+                            value={profileForm.state} 
+                            onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })} 
+                            placeholder="CA"
+                          />
+                        </div>
+                        <div className="payment-input-group">
+                          <label>ZIP / Postal</label>
+                          <input 
+                            type="text" 
+                            value={profileForm.zipCode} 
+                            onChange={(e) => setProfileForm({ ...profileForm, zipCode: e.target.value })} 
+                            placeholder="90210"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="primary-btn checkout-btn" 
+                    style={{ justifyContent: 'center', padding: '12px', marginTop: '20px' }}
+                  >
+                    <span>Save Profile Settings</span>
+                  </button>
+
+                </form>
+              </div>
+            </div>
+          )}
+
         </section>
       </main>
 
@@ -1102,6 +1338,56 @@ export default function CustomerDashboard({
           </div>
         )}
       </div>
+
+      {/* Cancel Order Confirm Dialog Modal */}
+      {cancellingOrder && (
+        <div 
+          className="glass-modal-overlay open"
+          style={{ zIndex: 4000 }}
+          onClick={() => setCancellingOrder(null)}
+        >
+          <div className="glass-modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setCancellingOrder(null)}>
+              <X size={18} />
+            </button>
+            <div style={{ padding: '28px', textAlign: 'center' }}>
+              <div style={{ 
+                width: '60px', 
+                height: '60px', 
+                borderRadius: '50%', 
+                background: 'rgba(239, 68, 68, 0.15)', 
+                color: '#ef4444', 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                margin: '0 auto 16px auto'
+              }}>
+                <AlertTriangle size={28} />
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', margin: '0 0 10px 0', textAlign: 'center' }}>Cancel Order?</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 24px 0', textAlign: 'center' }}>
+                Are you sure you want to cancel order **"{cancellingOrder.id}"**? This action cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  className="secondary-btn" 
+                  style={{ flex: 1, padding: '10px 14px', justifyContent: 'center' }} 
+                  onClick={() => setCancellingOrder(null)}
+                >
+                  Go Back
+                </button>
+                <button 
+                  className="primary-btn" 
+                  style={{ flex: 1, padding: '10px 14px', justifyContent: 'center', background: '#ef4444', color: '#fff' }} 
+                  onClick={handleConfirmCancel}
+                >
+                  Cancel Order
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

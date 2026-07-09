@@ -576,8 +576,6 @@ export default function WishlistPage({
                       onSaveCart([]);
                     }
                     setCartOpen(false);
-                    addToast('Checkout completed! Order generated and sent to Merchant Dashboard.', 'success');
-                    onNavigate('customer-dashboard');
                   }}
                 >
                   <span>Proceed to Checkout</span>

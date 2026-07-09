@@ -726,18 +726,81 @@
 }
 
 /* Responsive grid changes */
-@media (max-width: 1024px) {
-  .dashboard-main-layout {
-    grid-template-columns: 1fr;
+@media (max-width: 1200px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
   .dashboard-products-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .metrics-grid {
-    grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 1024px) {
+  .dashboard-main-layout {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 16px;
+    gap: 12px;
+  }
+  .sidebar-header {
+    width: 100%;
+  }
+  .sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sidebar-link {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  .sidebar-footer-info {
+    margin-top: 0;
+    width: 100%;
+    justify-content: flex-start;
+    padding-top: 8px;
+    border-top: 1px solid var(--glass-border);
   }
   .dashboard-charts-layout {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pane-header h2 {
+    font-size: 22px;
+  }
+  /* Make tables scrollable on mobile */
+  .stock-control-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .stock-control-table thead,
+  .stock-control-table tbody,
+  .stock-control-table tr,
+  .stock-control-table th,
+  .stock-control-table td {
+    display: revert;
+  }
+  .table-product-info {
+    max-width: 160px;
+  }
+  .dashboard-add-product-form .form-fields-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-group.flex-full {
+    grid-column: span 1;
   }
 }
 
@@ -748,10 +811,38 @@
   .metrics-grid {
     grid-template-columns: 1fr;
   }
-  .dashboard-add-product-form .form-fields-grid {
-    grid-template-columns: 1fr;
+  .metric-card {
+    padding: 14px;
   }
-  .form-group.flex-full {
-    grid-column: span 1;
+  .form-layout-card {
+    padding: 16px;
+  }
+  .sidebar-nav {
+    flex-direction: column;
+    width: 100%;
   }
 }
+
+@media (max-width: 480px) {
+  .dashboard-sidebar {
+    padding: 12px;
+  }
+  .sidebar-link {
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+  .pane-header h2 {
+    font-size: 20px;
+  }
+  .dashboard-charts-layout {
+    gap: 16px;
+  }
+  .chart-card {
+    padding: 16px;
+  }
+  .dashboard-toasts-container {
+    right: 12px;
+    left: 12px;
+  }
+}
+

@@ -162,3 +162,81 @@
     display: none;
   }
 }
+
+/* ========================================== */
+/* CUSTOMER DASHBOARD RESPONSIVE BREAKPOINTS  */
+/* ========================================== */
+
+/* Tablet: sidebar becomes horizontal tab row */
+@media (max-width: 1024px) {
+  .dashboard-main-layout {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 16px;
+    gap: 12px;
+  }
+  .sidebar-header {
+    width: 100%;
+  }
+  .sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sidebar-link {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  .sidebar-footer-info {
+    margin-top: 0;
+    width: 100%;
+    justify-content: flex-start;
+    padding-top: 8px;
+    border-top: 1px solid var(--glass-border);
+  }
+}
+
+/* Medium tablet */
+@media (max-width: 768px) {
+  .pane-header h2 {
+    font-size: 22px;
+  }
+  /* Make order tables horizontally scrollable */
+  .stock-control-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .order-history-card {
+    padding: 16px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .sidebar-nav {
+    flex-direction: column;
+    width: 100%;
+  }
+  .sidebar-link {
+    width: 100%;
+  }
+  .pane-header h2 {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-sidebar {
+    padding: 12px;
+  }
+  .dashboard-toasts-container {
+    right: 12px;
+    left: 12px;
+  }
+}
+

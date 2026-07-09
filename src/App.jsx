@@ -6,6 +6,7 @@ import WishlistPage from './pages/customer/WishlistPage';
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import { PRODUCTS_DATA } from './data/products';
+import PaymentGatewayModal from './components/common/PaymentGatewayModal';
 
 const DEFAULT_MOCK_ORDERS = [
   {
@@ -85,6 +86,7 @@ const DEFAULT_MOCK_ORDERS = [
 
 function App() {
   const [currentPage, setCurrentPage] = useState('landing');
+  const [checkoutCart, setCheckoutCart] = useState(null);
   
   // Lazily initialize user and theme from localStorage
   const [user, setUser] = useState(() => {
@@ -181,11 +183,16 @@ function App() {
 
   const handleCheckout = (cartItems) => {
     if (!cartItems || cartItems.length === 0) return;
+    setCheckoutCart(cartItems);
+  };
+
+  const handlePaymentSuccess = () => {
+    if (!checkoutCart || checkoutCart.length === 0) return;
     
     const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
     const orderDate = new Date().toISOString().split('T')[0];
     
-    const items = cartItems.map(item => ({
+    const items = checkoutCart.map(item => ({
       productId: item.product.id,
       name: item.product.name,
       price: item.product.price,
@@ -194,14 +201,17 @@ function App() {
       vendor: item.product.vendor
     }));
     
-    const total = cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
-    
+    const total = checkoutCart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+    const tax = total * 0.08;
+    const shipping = total > 300 ? 0 : 15.00;
+    const finalTotal = total + tax + shipping;
+
     const newOrder = {
       id: orderId,
       customerName: user ? user.name : 'Sarah Jenkins',
       customerEmail: user ? user.email : 'sarah@jenkins.com',
       date: orderDate,
-      total: parseFloat(total.toFixed(2)),
+      total: parseFloat(finalTotal.toFixed(2)),
       status: 'Pending',
       rejectionReason: '',
       items: items
@@ -215,6 +225,13 @@ function App() {
     localStorage.setItem('shopstack_orders', JSON.stringify(updatedOrders));
     
     handleSaveCart([]);
+    setCheckoutCart(null);
+    setCurrentPage('customer-dashboard');
+  };
+
+  const handleUpdateUser = (updatedUserData) => {
+    setUser(updatedUserData);
+    localStorage.setItem('shopstack_user', JSON.stringify(updatedUserData));
   };
 
   // Keep body class in sync with the theme state
@@ -253,28 +270,26 @@ function App() {
     localStorage.setItem('shopstack_wishlist', JSON.stringify(newWishlist));
   };
 
+  let content;
+  
   if (currentPage === 'login') {
-    return (
+    content = (
       <Login 
         onNavigate={setCurrentPage} 
         onLoginSuccess={handleLoginSuccess} 
         theme={theme} 
       />
     );
-  }
-
-  if (currentPage === 'register') {
-    return (
+  } else if (currentPage === 'register') {
+    content = (
       <Register 
         onNavigate={setCurrentPage} 
         onRegisterSuccess={handleLoginSuccess} 
         theme={theme} 
       />
     );
-  }
-
-  if (currentPage === 'wishlist') {
-    return (
+  } else if (currentPage === 'wishlist') {
+    content = (
       <WishlistPage 
         onNavigate={setCurrentPage}
         user={user}
@@ -290,10 +305,8 @@ function App() {
         onCheckout={handleCheckout}
       />
     );
-  }
-
-  if (currentPage === 'vendor-dashboard') {
-    return (
+  } else if (currentPage === 'vendor-dashboard') {
+    content = (
       <VendorDashboard
         onNavigate={setCurrentPage}
         user={user}
@@ -304,12 +317,11 @@ function App() {
         onUpdateProducts={handleUpdateProducts}
         orders={orders}
         onUpdateOrderStatus={handleUpdateOrderStatus}
+        onUpdateUser={handleUpdateUser}
       />
     );
-  }
-
-  if (currentPage === 'customer-dashboard') {
-    return (
+  } else if (currentPage === 'customer-dashboard') {
+    content = (
       <CustomerDashboard
         onNavigate={setCurrentPage}
         user={user}
@@ -325,27 +337,44 @@ function App() {
         notifications={notifications}
         onUpdateNotifications={handleUpdateNotifications}
         onUpdateOrders={handleUpdateOrders}
+        onUpdateOrderStatus={handleUpdateOrderStatus}
+        onUpdateUser={handleUpdateUser}
+      />
+    );
+  } else {
+    content = (
+      <LandingPage 
+        onNavigate={setCurrentPage} 
+        user={user} 
+        onLogout={handleLogout}
+        appTheme={theme}
+        onToggleAppTheme={handleToggleTheme}
+        cart={cart}
+        onSaveCart={handleSaveCart}
+        wishlist={wishlist}
+        onSaveWishlist={handleSaveWishlist}
+        products={products}
+        onUpdateProducts={handleUpdateProducts}
+        onLoginSuccess={handleLoginSuccess}
+        onCheckout={handleCheckout}
+        notifications={notifications}
       />
     );
   }
 
   return (
-    <LandingPage 
-      onNavigate={setCurrentPage} 
-      user={user} 
-      onLogout={handleLogout}
-      appTheme={theme}
-      onToggleAppTheme={handleToggleTheme}
-      cart={cart}
-      onSaveCart={handleSaveCart}
-      wishlist={wishlist}
-      onSaveWishlist={handleSaveWishlist}
-      products={products}
-      onUpdateProducts={handleUpdateProducts}
-      onLoginSuccess={handleLoginSuccess}
-      onCheckout={handleCheckout}
-      notifications={notifications}
-    />
+    <>
+      {content}
+      {checkoutCart && (
+        <PaymentGatewayModal
+          cartItems={checkoutCart}
+          user={user}
+          onPaymentSuccess={handlePaymentSuccess}
+          onCancel={() => setCheckoutCart(null)}
+          theme={theme}
+        />
+      )}
+    </>
   );
 }
 

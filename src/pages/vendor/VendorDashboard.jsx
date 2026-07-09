@@ -26,7 +26,8 @@ import {
   TrendingUp,
   Package,
   AlertTriangle,
-  DollarSign
+  DollarSign,
+  User
 } from 'lucide-react';
 import './VendorDashboard.css';
 
@@ -39,9 +40,10 @@ export default function VendorDashboard({
   products = [],
   onUpdateProducts,
   orders = [],
-  onUpdateOrderStatus
+  onUpdateOrderStatus,
+  onUpdateUser
 }) {
-  const [activeTab, setActiveTab] = useState('overview'); // overview, products, add-product, stock, security, orders
+  const [activeTab, setActiveTab] = useState('overview'); // overview, products, add-product, stock, security, orders, profile
   const [toasts, setToasts] = useState([]);
   
   // Rejection modal states
@@ -53,6 +55,58 @@ export default function VendorDashboard({
   
   // Search and filter inside dashboard
   const [productSearch, setProductSearch] = useState('');
+
+  // Profile Form State
+  const [profileForm, setProfileForm] = useState({
+    shopName: user ? (user.vendorDetails ? user.vendorDetails.shopName : 'Apex Tech Supplies') : 'Apex Tech Supplies',
+    category: user ? (user.vendorDetails ? user.vendorDetails.category : 'electronics') : 'electronics',
+    ownerName: user ? user.name : 'Sarah Jenkins',
+    email: user ? user.email : 'vendor@apextech.com',
+    phone: user ? (user.vendorDetails ? user.vendorDetails.phone || '+1 555-901-2294' : '+1 555-901-2294') : '+1 555-901-2294',
+    address: user ? (user.vendorDetails ? user.vendorDetails.address || '94 Innovation Drive, Warehouse C' : '94 Innovation Drive, Warehouse C') : '94 Innovation Drive, Warehouse C',
+    gstin: user ? (user.vendorDetails ? user.vendorDetails.gstin || '22ABCDE1234F1Z5' : '22ABCDE1234F1Z5') : '22ABCDE1234F1Z5',
+    memberSince: user ? user.memberSince || '2026-02-10' : '2026-02-10'
+  });
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        shopName: user.vendorDetails ? user.vendorDetails.shopName : 'Apex Tech Supplies',
+        category: user.vendorDetails ? user.vendorDetails.category : 'electronics',
+        ownerName: user.name || '',
+        email: user.email || '',
+        phone: user.vendorDetails ? user.vendorDetails.phone || '+1 555-901-2294' : '+1 555-901-2294',
+        address: user.vendorDetails ? user.vendorDetails.address || '94 Innovation Drive, Warehouse C' : '94 Innovation Drive, Warehouse C',
+        gstin: user.vendorDetails ? user.vendorDetails.gstin || '22ABCDE1234F1Z5' : '22ABCDE1234F1Z5',
+        memberSince: user.memberSince || '2026-02-10'
+      });
+    }
+  }, [user]);
+
+  const handleProfileSave = (e) => {
+    e.preventDefault();
+    if (!profileForm.shopName.trim() || !profileForm.ownerName.trim()) {
+      addToast('Shop Name and Owner Name are required.', 'error');
+      return;
+    }
+    if (onUpdateUser) {
+      onUpdateUser({
+        ...user,
+        name: profileForm.ownerName,
+        email: profileForm.email,
+        memberSince: profileForm.memberSince,
+        vendorDetails: {
+          ...user.vendorDetails,
+          shopName: profileForm.shopName,
+          category: profileForm.category,
+          phone: profileForm.phone,
+          address: profileForm.address,
+          gstin: profileForm.gstin
+        }
+      });
+      addToast('Boutique profile updated successfully!', 'success');
+    }
+  };
   const [selectedCategoryTab, setSelectedCategoryTab] = useState('all');
   
   // Product Detail Modal State
@@ -460,6 +514,14 @@ export default function VendorDashboard({
             >
               <Lock size={18} />
               <span>Security Settings</span>
+            </button>
+
+            <button 
+              className={`sidebar-link ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveTab('profile')}
+            >
+              <User size={18} />
+              <span>Shop Profile Details</span>
             </button>
           </nav>
 
@@ -1276,16 +1338,18 @@ export default function VendorDashboard({
                                   onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
                                   className="stock-inline-input"
                                   style={{ width: '120px', padding: '6px', height: 'auto', fontWeight: '600' }}
-                                  disabled={order.status === 'Rejected'}
+                                  disabled={order.status === 'Rejected' || order.status === 'Cancelled'}
                                 >
                                   <option value="Pending">Pending</option>
                                   <option value="Processing">Processing</option>
+                                  <option value="Packed">Packed</option>
                                   <option value="Shipped">Shipped</option>
                                   <option value="Delivered">Delivered</option>
+                                  <option value="Cancelled" disabled>Cancelled</option>
                                   <option value="Rejected" disabled>Rejected</option>
                                 </select>
                                 
-                                {order.status !== 'Rejected' && (
+                                {order.status !== 'Rejected' && order.status !== 'Cancelled' && (
                                   <button
                                     onClick={() => setRejectingOrder(order)}
                                     className="primary-btn"
@@ -1315,6 +1379,146 @@ export default function VendorDashboard({
                     <p>There are no customer orders listed for your products currently.</p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'profile' && (
+            <div className="tab-pane">
+              <div className="pane-header">
+                <h2>Boutique Shop Profile Details</h2>
+                <p>Manage your merchant profile details, category, GSTIN codes, and addresses</p>
+              </div>
+
+              <div className="profile-grid-layout">
+                {/* Left Panel: Logo & Quick Stats */}
+                <div className="profile-avatar-card glass-card">
+                  <div className="profile-avatar-circle" style={{ background: 'linear-gradient(135deg, #c084fc, #6366f1)' }}>
+                    {profileForm.shopName ? profileForm.shopName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'AT'}
+                  </div>
+                  <h3 className="profile-avatar-title">{profileForm.shopName}</h3>
+                  <span className="profile-avatar-role">Boutique Merchant</span>
+                  
+                  <div style={{ marginTop: '24px', width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '8px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Status</span>
+                      <span style={{ color: '#10b981', fontWeight: '700' }}>Verified Vendor</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '8px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Category</span>
+                      <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{profileForm.category}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '8px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Merchant Since</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>{profileForm.memberSince}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Panel: Form Fields */}
+                <form onSubmit={handleProfileSave} className="profile-form-card glass-card">
+                  
+                  {/* Shop Details Section */}
+                  <div className="profile-form-section">
+                    <h4 className="profile-section-title">Boutique Shop Records</h4>
+                    <div className="profile-input-grid">
+                      <div className="payment-input-group">
+                        <label>Boutique Shop Name</label>
+                        <input 
+                          type="text" 
+                          value={profileForm.shopName} 
+                          onChange={(e) => setProfileForm({ ...profileForm, shopName: e.target.value })} 
+                          placeholder="Apex Tech Supplies"
+                          required
+                        />
+                      </div>
+                      <div className="payment-input-group">
+                        <label>Business Category</label>
+                        <select 
+                          value={profileForm.category} 
+                          onChange={(e) => setProfileForm({ ...profileForm, category: e.target.value })}
+                          style={{ width: '100%' }}
+                        >
+                          <option value="electronics">Electronics</option>
+                          <option value="fashion">Fashion</option>
+                          <option value="home">Home & living</option>
+                          <option value="fitness">Fitness & Outdoors</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Owner Records Section */}
+                  <div className="profile-form-section" style={{ marginTop: '20px' }}>
+                    <h4 className="profile-section-title">Owner Information</h4>
+                    <div className="profile-input-grid">
+                      <div className="payment-input-group">
+                        <label>Owner Full Name</label>
+                        <input 
+                          type="text" 
+                          value={profileForm.ownerName} 
+                          onChange={(e) => setProfileForm({ ...profileForm, ownerName: e.target.value })} 
+                          placeholder="Sarah Jenkins"
+                          required
+                        />
+                      </div>
+                      <div className="payment-input-group">
+                        <label>Contact Email Address</label>
+                        <input 
+                          type="email" 
+                          value={profileForm.email} 
+                          onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })} 
+                          placeholder="vendor@apextech.com"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="profile-input-grid" style={{ marginTop: '12px' }}>
+                      <div className="payment-input-group">
+                        <label>Contact Phone Number</label>
+                        <input 
+                          type="text" 
+                          value={profileForm.phone} 
+                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })} 
+                          placeholder="+1 555-901-2294"
+                        />
+                      </div>
+                      <div className="payment-input-group">
+                        <label>GSTIN / Tax ID Number</label>
+                        <input 
+                          type="text" 
+                          value={profileForm.gstin} 
+                          onChange={(e) => setProfileForm({ ...profileForm, gstin: e.target.value })} 
+                          placeholder="22ABCDE1234F1Z5"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Shop Address Section */}
+                  <div className="profile-form-section" style={{ marginTop: '20px' }}>
+                    <h4 className="profile-section-title">Boutique Shop Address</h4>
+                    <div className="payment-input-group">
+                      <label>Store Warehouse Address</label>
+                      <input 
+                        type="text" 
+                        value={profileForm.address} 
+                        onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })} 
+                        placeholder="94 Innovation Drive, Warehouse C"
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="primary-btn checkout-btn" 
+                    style={{ justifyContent: 'center', padding: '12px', marginTop: '20px' }}
+                  >
+                    <span>Save Profile Settings</span>
+                  </button>
+
+                </form>
               </div>
             </div>
           )}

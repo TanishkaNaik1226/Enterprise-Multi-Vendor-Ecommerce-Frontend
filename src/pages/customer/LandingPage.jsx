@@ -52,6 +52,7 @@ export default function LandingPage({
   const [cartOpen, setCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeQuickViewImage, setActiveQuickViewImage] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   
   const unreadCount = useMemo(() => {
     if (!user) return 0;
@@ -254,13 +255,50 @@ export default function LandingPage({
           <nav>
             <ul className="nav-links">
               <li><a href="#" className="active">Home</a></li>
-              <li><a href="#browse-section">Browse Shop</a></li>
-              <li><a href="#become-vendor-section">Sellers Portal</a></li>
-
+              <li><a href="#browse-section">Categories</a></li>
+              <li><a href="#browse-section">All Products</a></li>
+              <li>
+                <a 
+                  href="#" 
+                  onClick={(e) => { 
+                    e.preventDefault(); 
+                    if (user) {
+                      onNavigate(user.role === 'vendor' ? 'vendor-dashboard' : 'customer-dashboard');
+                    } else {
+                      onNavigate('login');
+                    }
+                  }}
+                >
+                  Dashboard
+                </a>
+              </li>
             </ul>
           </nav>
 
           <div className="nav-actions">
+            {/* Hamburger toggle (mobile only) */}
+            <button
+              className="mobile-nav-toggle"
+              onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              title="Toggle navigation menu"
+              aria-label="Toggle navigation"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                {mobileNavOpen ? (
+                  <>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </>
+                ) : (
+                  <>
+                    <line x1="3" y1="7" x2="21" y2="7" />
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="17" x2="21" y2="17" />
+                  </>
+                )}
+              </svg>
+            </button>
+
             {/* Dark Mode toggle button */}
             <button className="icon-btn" onClick={toggleTheme} title="Toggle dark/light mode">
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -346,7 +384,29 @@ export default function LandingPage({
             )}
           </div>
         </div>
+
+        {/* Mobile nav slide-down menu */}
+        <div className={`mobile-nav-menu ${mobileNavOpen ? 'open' : ''}`}>
+          <a href="#" onClick={() => setMobileNavOpen(false)}>Home</a>
+          <a href="#browse-section" onClick={() => setMobileNavOpen(false)}>Categories</a>
+          <a href="#browse-section" onClick={() => setMobileNavOpen(false)}>All Products</a>
+          <a 
+            href="#" 
+            onClick={(e) => { 
+              e.preventDefault(); 
+              setMobileNavOpen(false);
+              if (user) {
+                onNavigate(user.role === 'vendor' ? 'vendor-dashboard' : 'customer-dashboard');
+              } else {
+                onNavigate('login');
+              }
+            }}
+          >
+            Dashboard
+          </a>
+        </div>
       </header>
+
 
       {/* Hero Section */}
       <section className="section-width hero-section">
@@ -774,8 +834,6 @@ export default function LandingPage({
                       saveCart([]);
                     }
                     setCartOpen(false);
-                    addToast('Checkout completed! Order generated and sent to Merchant Dashboard.', 'success');
-                    onNavigate('customer-dashboard');
                   }}
                 >
                   <span>Proceed to Checkout</span>
