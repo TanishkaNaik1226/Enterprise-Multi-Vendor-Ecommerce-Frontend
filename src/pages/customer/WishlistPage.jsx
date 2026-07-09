@@ -19,7 +19,6 @@ import {
   Copy,
   AlertCircle
 } from 'lucide-react';
-import { PRODUCTS_DATA } from '../../data/products';
 import './WishlistPage.css';
 
 export default function WishlistPage({ 
@@ -31,7 +30,10 @@ export default function WishlistPage({
   cart, 
   onSaveCart, 
   wishlist, 
-  onSaveWishlist 
+  onSaveWishlist,
+  products = [],
+  notifications = [],
+  onCheckout
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [priceAlerts, setPriceAlerts] = useState(false);
@@ -42,6 +44,12 @@ export default function WishlistPage({
   // Cart Drawer & Profiles States
   const [cartOpen, setCartOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  
+  const unreadCount = useMemo(() => {
+    if (!user) return 0;
+    return notifications.filter(n => n.customerEmail === user.email && !n.read).length;
+  }, [notifications, user]);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const toastIdRef = useRef(0);
   const shareIdRef = useRef(1001);
@@ -70,12 +78,12 @@ export default function WishlistPage({
 
   // Filter products in the wishlist
   const wishlistedProducts = useMemo(() => {
-    return PRODUCTS_DATA.filter((product) => wishlist.includes(product.id)).filter((product) => {
+    return products.filter((product) => wishlist.includes(product.id)).filter((product) => {
       return product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
              product.vendor.toLowerCase().includes(searchQuery.toLowerCase()) ||
              product.category.toLowerCase().includes(searchQuery.toLowerCase());
     });
-  }, [wishlist, searchQuery]);
+  }, [wishlist, searchQuery, products]);
 
   // Total wishlist item count
   const totalWishlistCount = wishlist.length;
@@ -111,7 +119,7 @@ export default function WishlistPage({
 
   // Bulk: Move All In-Stock items to Cart
   const handleMoveAllToCart = () => {
-    const inStockWishlistItems = PRODUCTS_DATA.filter((p) => wishlist.includes(p.id) && getStockStatus(p.id).status !== 'out-of-stock');
+    const inStockWishlistItems = products.filter((p) => wishlist.includes(p.id) && getStockStatus(p.id).status !== 'out-of-stock');
     
     if (inStockWishlistItems.length === 0) {
       addToast('No in-stock wishlist items to move.', 'info');
@@ -143,10 +151,7 @@ export default function WishlistPage({
   // Bulk: Clear entire Wishlist
   const handleClearWishlist = () => {
     if (wishlist.length === 0) return;
-    if (window.confirm('Are you sure you want to clear your wishlist?')) {
-      onSaveWishlist([]);
-      addToast('Wishlist cleared.', 'info');
-    }
+    setClearConfirmOpen(true);
   };
 
   // Share Wishlist link mock copy
@@ -242,14 +247,18 @@ export default function WishlistPage({
               </button>
             ) : (
               <div className="profile-menu-container">
-                <button 
+                 <button 
                   className="profile-trigger"
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  style={{ position: 'relative' }}
                 >
                   <div className="avatar-circle">{user.avatar}</div>
                   <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.name.split(' ')[0]}
                   </span>
+                  {unreadCount > 0 && (
+                    <span className="nav-notification-dot" style={{ position: 'absolute', top: '2px', left: '26px', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', border: '1px solid var(--bg-dark)', boxShadow: '0 0 8px #ef4444' }}></span>
+                  )}
                 </button>
                 {profileMenuOpen && (
                   <div className="profile-dropdown glass-card">
@@ -264,11 +273,20 @@ export default function WishlistPage({
                       className="dropdown-item"
                       onClick={() => {
                         setProfileMenuOpen(false);
-                        addToast(`Navigating to ${user.role === 'customer' ? 'Orders History' : 'Merchant Dashboard'}...`, 'info');
+                        if (user.role === 'vendor') {
+                          onNavigate('vendor-dashboard');
+                        } else {
+                          onNavigate('customer-dashboard');
+                        }
                       }}
                     >
                       <Layers size={14} />
                       <span>{user.role === 'customer' ? 'My Orders' : 'Vendor Dashboard'}</span>
+                      {unreadCount > 0 && (
+                        <span className="badge" style={{ marginLeft: 'auto', background: '#ef4444', color: '#fff', fontSize: '10px', padding: '2px 6px', borderRadius: '10px', position: 'static' }}>
+                          {unreadCount}
+                        </span>
+                      )}
                     </button>
                     <button 
                       className="dropdown-item logout"
@@ -552,9 +570,14 @@ export default function WishlistPage({
                 <button 
                   className="primary-btn checkout-btn" 
                   onClick={() => {
-                    onSaveCart([]);
+                    if (onCheckout) {
+                      onCheckout(cart);
+                    } else {
+                      onSaveCart([]);
+                    }
                     setCartOpen(false);
-                    addToast('Checkout simulated! Orders generated and sent to Warehouse modules.', 'success');
+                    addToast('Checkout completed! Order generated and sent to Merchant Dashboard.', 'success');
+                    onNavigate('customer-dashboard');
                   }}
                 >
                   <span>Proceed to Checkout</span>
@@ -596,6 +619,60 @@ export default function WishlistPage({
           </div>
         </div>
       </div>
+
+      {/* Custom Confirmation Modal for Clearing Wishlist */}
+      {clearConfirmOpen && (
+        <div 
+          className="glass-modal-overlay open"
+          style={{ zIndex: 4000 }}
+          onClick={() => setClearConfirmOpen(false)}
+        >
+          <div className="glass-modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setClearConfirmOpen(false)}>
+              <X size={18} />
+            </button>
+            <div style={{ padding: '28px', textAlign: 'center' }}>
+              <div style={{ 
+                width: '60px', 
+                height: '60px', 
+                borderRadius: '50%', 
+                background: 'rgba(239, 68, 68, 0.15)', 
+                color: '#ef4444', 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                margin: '0 auto 16px auto'
+              }}>
+                <Trash2 size={28} />
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', margin: '0 0 10px 0', textAlign: 'center' }}>Clear Wishlist?</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 24px 0', textAlign: 'center' }}>
+                Are you sure you want to remove all items from your saved wishlist? This cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  className="secondary-btn" 
+                  style={{ flex: 1, padding: '10px 14px', justifyContent: 'center' }} 
+                  onClick={() => setClearConfirmOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="primary-btn" 
+                  style={{ flex: 1, padding: '10px 14px', justifyContent: 'center', background: '#ef4444', color: '#fff' }} 
+                  onClick={() => {
+                    onSaveWishlist([]);
+                    addToast('Wishlist cleared.', 'info');
+                    setClearConfirmOpen(false);
+                  }}
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Alert Popups wrapper */}
       <div className="glass-toast-container">

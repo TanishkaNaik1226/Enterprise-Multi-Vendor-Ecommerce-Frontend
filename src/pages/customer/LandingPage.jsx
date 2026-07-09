@@ -26,10 +26,6 @@ import {
 } from 'lucide-react';
 import './LandingPage.css';
 
-import { PRODUCTS_DATA } from '../../data/products';
-
-
-
 export default function LandingPage({ 
   onNavigate, 
   user, 
@@ -39,7 +35,12 @@ export default function LandingPage({
   cart,
   onSaveCart,
   wishlist,
-  onSaveWishlist
+  onSaveWishlist,
+  products = [],
+  onUpdateProducts,
+  onLoginSuccess,
+  onCheckout,
+  notifications = []
 }) {
   const theme = appTheme;
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -50,6 +51,20 @@ export default function LandingPage({
   // Open/Close Drawers & Modals
   const [cartOpen, setCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [activeQuickViewImage, setActiveQuickViewImage] = useState(null);
+  
+  const unreadCount = useMemo(() => {
+    if (!user) return 0;
+    return notifications.filter(n => n.customerEmail === user.email && !n.read).length;
+  }, [notifications, user]);
+
+  useEffect(() => {
+    if (selectedProduct) {
+      setActiveQuickViewImage(selectedProduct.image);
+    } else {
+      setActiveQuickViewImage(null);
+    }
+  }, [selectedProduct]);
   
   // Toast Alerts State
   const [toasts, setToasts] = useState([]);
@@ -170,12 +185,35 @@ export default function LandingPage({
       addToast('Please fill out all fields.', 'info');
       return;
     }
+    
+    // Create vendor user session
+    const mockVendorUser = {
+      name: vendorForm.name,
+      email: vendorForm.email,
+      role: 'vendor',
+      avatar: vendorForm.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2),
+      vendorDetails: {
+        shopName: vendorForm.shopName,
+        category: vendorForm.category,
+        phone: ''
+      }
+    };
+
     addToast(`Successfully registered "${vendorForm.shopName}"! Welcome to ShopStack.`, 'success');
     setVendorForm({ name: '', email: '', shopName: '', category: 'electronics' });
+    
+    if (onLoginSuccess) {
+      onLoginSuccess(mockVendorUser);
+    }
+    
+    // Redirect to Vendor Dashboard
+    setTimeout(() => {
+      onNavigate('vendor-dashboard');
+    }, 800);
   };
 
   // Filtering Logic
-  const filteredProducts = PRODUCTS_DATA.filter((product) => {
+  const filteredProducts = products.filter((product) => {
     const matchesCategory = activeCategory === 'all' || product.category === activeCategory;
     const matchesSearch = 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -253,11 +291,15 @@ export default function LandingPage({
                 <button 
                   className="profile-trigger"
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  style={{ position: 'relative' }}
                 >
                   <div className="avatar-circle">{user.avatar}</div>
                   <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.name.split(' ')[0]}
                   </span>
+                  {unreadCount > 0 && (
+                    <span className="nav-notification-dot" style={{ position: 'absolute', top: '2px', left: '26px', width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', border: '1px solid var(--bg-dark)', boxShadow: '0 0 8px #ef4444' }}></span>
+                  )}
                 </button>
                 {profileMenuOpen && (
                   <div className="profile-dropdown glass-card">
@@ -272,11 +314,20 @@ export default function LandingPage({
                       className="dropdown-item"
                       onClick={() => {
                         setProfileMenuOpen(false);
-                        addToast(`Navigating to ${user.role === 'customer' ? 'Orders History' : 'Merchant Dashboard'}...`, 'info');
+                        if (user.role === 'vendor') {
+                          onNavigate('vendor-dashboard');
+                        } else {
+                          onNavigate('customer-dashboard');
+                        }
                       }}
                     >
                       <Layers size={14} />
                       <span>{user.role === 'customer' ? 'My Orders' : 'Vendor Dashboard'}</span>
+                      {unreadCount > 0 && (
+                        <span className="badge" style={{ marginLeft: 'auto', background: '#ef4444', color: '#fff', fontSize: '10px', padding: '2px 6px', borderRadius: '10px', position: 'static' }}>
+                          {unreadCount}
+                        </span>
+                      )}
                     </button>
                     <button 
                       className="dropdown-item logout"
@@ -463,54 +514,98 @@ export default function LandingPage({
 
         {/* Product Cards Grid */}
         {filteredProducts.length > 0 ? (
-          <div className="products-grid">
-            {filteredProducts.map((product) => {
-              const isWishlisted = wishlist.includes(product.id);
-              return (
-                <div className="product-card glass-card" key={product.id}>
-                  <div className="product-image-container">
-                    <img src={product.image} alt={product.name} className="product-image" />
-                    <span className="product-badge">${product.price}</span>
-                    
-                    <button 
-                      className={`product-wishlist-toggle ${isWishlisted ? 'active' : ''}`}
-                      onClick={() => handleToggleWishlist(product)}
-                      title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-                    >
-                      <Heart size={16} fill={isWishlisted ? "#fff" : "none"} />
-                    </button>
-                  </div>
+          <div className="categories-showcase-container">
+            {(() => {
+              const categoryTitles = {
+                electronics: 'Electronics & Spatial Tech',
+                fashion: 'Apparel & Athleisure',
+                home: 'Home Living & Lumens',
+                beauty: 'Botanics & Beauty Care'
+              };
 
-                  <div className="product-meta">
-                    <span className="product-vendor">{product.vendor}</span>
-                    <span className="product-rating">
-                      <Star size={14} fill="#fb3" color="#fb3" />
-                      <span>{product.rating}</span>
-                    </span>
-                  </div>
+              const categoriesToRender = activeCategory === 'all' 
+                ? ['electronics', 'fashion', 'home', 'beauty'] 
+                : [activeCategory];
 
-                  <h3 className="product-name">{product.name}</h3>
-                  <p className="product-desc">{product.description}</p>
+              return categoriesToRender.map((cat) => {
+                const catProducts = products.filter((product) => {
+                  const matchesCategory = product.category === cat;
+                  const matchesSearch = 
+                    !searchQuery ||
+                    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    product.vendor.toLowerCase().includes(searchQuery.toLowerCase());
+                  return matchesCategory && matchesSearch;
+                });
 
-                  <div className="product-footer">
-                    <button 
-                      className="secondary-btn" 
-                      style={{ padding: '6px 12px', fontSize: '13px' }}
-                      onClick={() => setSelectedProduct(product)}
-                    >
-                      Quick View
-                    </button>
-                    <button 
-                      className="add-to-cart-btn"
-                      onClick={() => handleAddToCart(product)}
-                      title="Add to cart"
-                    >
-                      <Plus size={16} />
-                    </button>
+                if (catProducts.length === 0) return null;
+
+                return (
+                  <div className="category-showcase-section" key={cat} style={{ marginBottom: '40px' }}>
+                    <div className="category-section-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px' }}>
+                      <h3 style={{ fontSize: '20px', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>
+                        {categoryTitles[cat] || cat}
+                      </h3>
+                      <span className="category-count-badge" style={{ fontSize: '12px', background: 'var(--accent-bg)', color: 'var(--accent)', padding: '2px 10px', borderRadius: '12px', fontWeight: '600', border: '1px solid var(--accent-border)' }}>
+                        {catProducts.length} {catProducts.length === 1 ? 'Item' : 'Items'}
+                      </span>
+                    </div>
+
+                    <div className="products-grid-scroll-container">
+                      <div className="products-grid">
+                        {catProducts.map((product) => {
+                          const isWishlisted = wishlist.includes(product.id);
+                          return (
+                            <div className="product-card glass-card" key={product.id}>
+                              <div className="product-image-container">
+                                <img src={product.image} alt={product.name} className="product-image" />
+                                <span className="product-badge">${product.price}</span>
+                                
+                                <button 
+                                  className={`product-wishlist-toggle ${isWishlisted ? 'active' : ''}`}
+                                  onClick={() => handleToggleWishlist(product)}
+                                  title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                                >
+                                  <Heart size={16} fill={isWishlisted ? "#fff" : "none"} />
+                                </button>
+                              </div>
+
+                              <div className="product-meta">
+                                <span className="product-vendor">{product.vendor}</span>
+                                <span className="product-rating">
+                                  <Star size={14} fill="#fb3" color="#fb3" />
+                                  <span>{product.rating}</span>
+                                </span>
+                              </div>
+
+                              <h3 className="product-name">{product.name}</h3>
+                              <p className="product-desc">{product.description}</p>
+
+                              <div className="product-footer">
+                                <button 
+                                  className="secondary-btn" 
+                                  style={{ padding: '6px 12px', fontSize: '13px' }}
+                                  onClick={() => setSelectedProduct(product)}
+                                >
+                                  Quick View
+                                </button>
+                                <button 
+                                  className="add-to-cart-btn"
+                                  onClick={() => handleAddToCart(product)}
+                                  title="Add to cart"
+                                >
+                                  <Plus size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         ) : (
           <div className="glass-card empty-state">
@@ -673,9 +768,14 @@ export default function LandingPage({
                 <button 
                   className="primary-btn checkout-btn" 
                   onClick={() => {
-                    saveCart([]);
+                    if (onCheckout) {
+                      onCheckout(cart);
+                    } else {
+                      saveCart([]);
+                    }
                     setCartOpen(false);
-                    addToast('Checkout simulated! Orders generated and sent to Warehouse modules.', 'success');
+                    addToast('Checkout completed! Order generated and sent to Merchant Dashboard.', 'success');
+                    onNavigate('customer-dashboard');
                   }}
                 >
                   <span>Proceed to Checkout</span>
@@ -742,8 +842,38 @@ export default function LandingPage({
               <X size={18} />
             </button>
             <div className="quickview-layout">
-              <div className="quickview-image-panel">
-                <img src={selectedProduct.image} alt={selectedProduct.name} />
+              <div className="quickview-image-panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: 'auto' }}>
+                <div style={{ height: '280px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--glass-border)', background: 'var(--input-bg)' }}>
+                  <img 
+                    src={activeQuickViewImage || selectedProduct.image} 
+                    alt={selectedProduct.name} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                </div>
+                {selectedProduct.images && selectedProduct.images.length > 1 && (
+                  <div className="quickview-thumbnails" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    {selectedProduct.images.map((imgUrl, idx) => (
+                      <button
+                        key={idx}
+                        style={{
+                          width: '50px',
+                          height: '50px',
+                          borderRadius: '8px',
+                          border: `2px solid ${(activeQuickViewImage || selectedProduct.image) === imgUrl ? 'var(--accent)' : 'var(--glass-border)'}`,
+                          padding: 0,
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          background: 'none',
+                          flexShrink: 0,
+                          transition: 'var(--transition-smooth)'
+                        }}
+                        onClick={() => setActiveQuickViewImage(imgUrl)}
+                      >
+                        <img src={imgUrl} alt={`thumbnail-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="quickview-details">
                 <span className="product-vendor" style={{ alignSelf: 'flex-start', marginBottom: '8px' }}>

@@ -523,6 +523,32 @@
   margin-bottom: 90px;
 }
 
+.products-grid-scroll-container {
+  max-height: 995px;
+  overflow-y: auto;
+  padding-right: 10px;
+  padding-bottom: 8px;
+}
+
+/* Glassmorphic custom scrollbar styling */
+.products-grid-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.products-grid-scroll-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 10px;
+}
+
+.products-grid-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 10px;
+}
+
+.products-grid-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
 .products-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
