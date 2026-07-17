@@ -19,3 +19,13 @@
 
 > **Note:** This repository currently contains the Milestone 1 backend and the ongoing Milestone 2 frontend implementation.
 >  Some features are still under development and will be completed as backend modules become available.
+>
+> # Contribution Guidelines
+
+Please do **not** commit directly to the `main` branch.
+
+1. Clone the repository.
+2. Create a new branch for your work.
+3. Make your changes.
+4. Commit and push your branch.
+5. Create a Pull Request (or merge after review).
