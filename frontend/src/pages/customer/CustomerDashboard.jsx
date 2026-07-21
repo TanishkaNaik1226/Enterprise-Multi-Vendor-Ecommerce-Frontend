@@ -84,229 +84,11 @@ export default function CustomerDashboard({
 }) {
   const filteredProducts = useFilteredProducts(products, { priceMin, priceMax, selectedCategory, searchKeyword });
 
+  
   return (
     <div style={{ padding: '2rem' }}>
       <NotificationPanel />
-      {/* Search and Filters */}
-      <div style={{ marginBottom: '2rem' }}>
-        <form onSubmit={onHandleSearch} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={searchKeyword}
-            onChange={(e) => onSearchKeywordChange && onSearchKeywordChange(e.target.value)}
-            style={{ flex: 1, minWidth: '200px', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none' }}
-          />
-          <input
-            type="number"
-            placeholder="Min Price"
-            value={priceMin}
-            onChange={(e) => onPriceMinChange && onPriceMinChange(e.target.value)}
-            style={{ width: '110px', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none' }}
-          />
-          <input
-            type="number"
-            placeholder="Max Price"
-            value={priceMax}
-            onChange={(e) => onPriceMaxChange && onPriceMaxChange(e.target.value)}
-            style={{ width: '110px', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none' }}
-          />
-          <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1.25rem' }}>
-            <Search size={16} style={{ marginRight: '6px' }} />
-            Search
-          </button>
-        </form>
-      </div>
-
-      {/* Category Filters */}
-      {categories.length > 0 && (
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => onHandleCategoryClick && onHandleCategoryClick(cat.id)}
-              className={`btn ${selectedCategory === cat.id ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ padding: '0.3rem 0.8rem', fontSize: '0.85rem' }}
-            >
-              {cat.categoryName || cat.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Loading State */}
-      {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-          <div className="spinner"></div>
-        </div>
-      )}
-
-      {/* Products Grid */}
-      {!loading && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.5rem' }}>
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map(product => (
-            <div
-            key={product.id}
-            className="glass-card product-card"
-            style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', padding: '1.25rem', cursor: 'pointer', transition: 'transform 0.2s' }}
-            onClick={() => onViewProductDetails && onViewProductDetails(product)}
-          >
-            {/* Wishlist Icon */}
-            <div style={{ alignSelf: 'flex-end' }}>
-              <button
-                className="wishlist-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const inWish = wishlist.includes(product.id);
-                  setWishlist && setWishlist(inWish ? wishlist.filter(id => id !== product.id) : [...new Set([...wishlist, product.id])]);
-                }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                title={wishlist.includes(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-              >
-                <Heart
-                  size={18}
-                  fill={wishlist.includes(product.id) ? '#e91e63' : 'none'}
-                  color={wishlist.includes(product.id) ? '#e91e63' : 'var(--text-muted)'}
-                />
-              </button>
-            </div>
-            {product.image && (
-              <ProductImage
-                src={product.image}
-                alt={product.productName || product.name}
-                className="product-image"
-                style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '8px', marginBottom: '1rem' }}
-              />
-            )}
-            <div style={{ flexGrow: 1 }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                {product.productName || product.name}
-              </h3>
-              <p style={{ margin: '0.5rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                {product.description}
-              </p>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-              <span style={{ fontWeight: 700, color: 'var(--secondary)', whiteSpace: 'nowrap' }}>${product.price}</span>
-              <button
-                className="btn btn-primary"
-                style={{ padding: '0.3rem 0.8rem', fontSize: '0.85rem' }}
-                onClick={(e) => { e.stopPropagation(); onHandleAddToCart && onHandleAddToCart(product, e); }}
-                disabled={product.stockQuantity === 0}
-              >
-                <ShoppingBag size={14} style={{ marginRight: '4px' }} />
-                Add to Cart
-              </button>
-            </div>
-          </div>
-          ))
-          ) : (
-            <EmptyState message="No products found. Try a different search or category." />
-          )}
-        </div>
-      )}
-
-      {/* Product Detail Modal */}
-      {selectedProduct && (
-        <div
-          className="modal-overlay"
-          onClick={() => onSetSelectedProduct && onSetSelectedProduct(null)}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '640px', textAlign: 'left' }}
-          >
-            <button className="modal-close" onClick={() => onSetSelectedProduct && onSetSelectedProduct(null)}>×</button>
-            <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, marginBottom: '0.5rem' }}>
-              {selectedProduct.productName || selectedProduct.name}
-            </h3>
-            <p style={{ color: 'var(--secondary)', fontWeight: 700, fontSize: '1.2rem', marginBottom: '0.5rem' }}>
-              ${selectedProduct.price}
-            </p>
-            {selectedProduct.description && (
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>{selectedProduct.description}</p>
-            )}
-            <button
-              className="btn btn-primary"
-              style={{ marginBottom: '1.5rem' }}
-              onClick={(e) => {
-                onHandleAddToCart && onHandleAddToCart(selectedProduct, e);
-                onSetSelectedProduct && onSetSelectedProduct(null);
-              }}
-            >
-              <ShoppingBag size={16} style={{ marginRight: '6px' }} />
-              Add to Cart
-            </button>
-
-            {/* Reviews Section */}
-            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-              <h4 style={{ marginBottom: '1rem' }}>Customer Reviews</h4>
-              {reviews.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                  {reviews.map((review) => (
-                    <div key={review.id} style={{ padding: '0.75rem', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          {Array.from({ length: review.rating || 5 }).map((_, i) => (
-                            <Star key={i} size={12} fill="#fb3" color="#fb3" />
-                          ))}
-                        </span>
-                        {user && (
-                          <button
-                            onClick={() => onDeleteReview && onDeleteReview(review.id)}
-                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '2px' }}
-                            title="Delete review"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        )}
-                      </div>
-                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{review.comment}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>No reviews yet. Be the first!</p>
-              )}
-
-              {/* Submit Review Form */}
-              {user && (
-                <form onSubmit={onSubmitReview} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <h5 style={{ margin: 0 }}>Write a Review</h5>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Rating:</label>
-                    <select
-                      value={newRating}
-                      onChange={(e) => onNewRatingChange && onNewRatingChange(Number(e.target.value))}
-                      style={{ padding: '0.25rem 0.5rem', background: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-primary)' }}
-                    >
-                      {[1,2,3,4,5].map(n => <option key={n} value={n}>{n} Star{n !== 1 ? 's' : ''}</option>)}
-                    </select>
-                  </div>
-                  <textarea
-                    placeholder="Share your experience..."
-                    value={newComment}
-                    onChange={(e) => onNewCommentChange && onNewCommentChange(e.target.value)}
-                    rows={3}
-                    style={{ padding: '0.5rem', background: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', resize: 'vertical' }}
-                  />
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={reviewLoading}
-                    style={{ alignSelf: 'flex-start' }}
-                  >
-                    {reviewLoading ? 'Submitting...' : 'Submit Review'}
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
+              
       {/* Customer Profile Section */}
       {customerProfile && (
         <div style={{ marginTop: '3rem', borderTop: '1px solid var(--border-color)', paddingTop: '2rem' }}>
@@ -328,8 +110,18 @@ export default function CustomerDashboard({
                     {addr.city}, {addr.state} {addr.postalCode}, {addr.country}
                   </p>
                   {addr.isDefault && <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>Default</span>}
+                  <div style={{ marginTop: '0.75rem',textAlign: 'right' }}>
+  <button
+    className="btn btn-danger"
+    onClick={() => onDeleteAddress(addr.id)}
+  >
+    Delete Address
+  </button>
+</div>
                 </div>
+                
               ))}
+              
             </div>
           ) : (
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>No addresses saved yet.</p>

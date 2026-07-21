@@ -263,6 +263,8 @@ export default function App() {
         </div>
 
         <nav className="nav-links">
+
+          {user && user.role === 'CUSTOMER' && (
           <button
             className={`nav-link ${currentView === 'landing' ? 'active' : ''}`}
             onClick={() => setCurrentView('landing')}
@@ -270,6 +272,7 @@ export default function App() {
           >
             Shop
           </button>
+          )}
 
           {user && user.role === 'VENDOR' && (
             <button
@@ -323,6 +326,7 @@ export default function App() {
           </button>
 
           {/* Cart Trigger */}
+          {user && user.role === 'CUSTOMER' && (
           <button
             className="btn btn-secondary"
             style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', position: 'relative' }}
@@ -330,7 +334,8 @@ export default function App() {
           >
             🛒 Cart ({cart.reduce((a, b) => a + b.quantity, 0)})
           </button>
-
+          )}
+          
           {/* User Signin / Info */}
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

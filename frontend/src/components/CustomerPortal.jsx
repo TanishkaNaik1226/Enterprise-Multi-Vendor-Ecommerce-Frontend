@@ -171,8 +171,14 @@ export default function CustomerPortal({ user, cart, setCart, addToast, fallback
     }
   };
 
+  const deleteAddress = async (id) => {
+    await api.address.delete(id);
+    loadAddresses();
+};
+
   return (
     <CustomerDashboard
+    onDeleteAddress={deleteAddress}
       user={user}
       products={products}
       categories={categories}
@@ -220,6 +226,7 @@ export default function CustomerPortal({ user, cart, setCart, addToast, fallback
       onSetSelectedProduct={setSelectedProduct}
       wishlist={wishlist}
       setWishlist={setWishlist}
+      
     />
   );
 }
